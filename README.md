@@ -1,0 +1,2 @@
+# notes
+A notes collection
