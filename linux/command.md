@@ -3,11 +3,11 @@
 ### find
 
 1. 根据文件大小查找文件
-``` sh
-find /path/ -size [+/-]n[b/c/w/k/M/G]
-# +/-分别代表文件大小大于/小于n个单位，如果不指定则相当于等于
-# 单位:c bytes, b 512-byte blocks, w 2-bytes, k kb, M MB, G GB
-```
+	``` sh
+	find /path/ -size [+/-]n[b/c/w/k/M/G]
+	# +/-分别代表文件大小大于/小于n个单位，如果不指定则相当于等于
+	# 单位:c bytes, b 512-byte blocks, w 2-bytes, k kb, M MB, G GB
+	```
 
 2. 根据文件时间查找文件
 	``` sh
@@ -26,7 +26,7 @@ find /path/ -size [+/-]n[b/c/w/k/M/G]
 	```
 	name-pattern可使用正则表达式
 
-4. 查找到文件进行后续操作命令可使用-exec 和 xargs，示例分别如下：
+4. 查找到文件进行后续操作命令可使用-exec 和 xargs，示例分别如下：<br>
 	-exec
 	``` sh
 	find ./ -type f -name "*.log" -exec mv {} {}.bak \;
