@@ -35,3 +35,33 @@
 	``` sh
 	find ./ -type f -name '*.log' | xargs grep .*
 	```
+
+5. 指定文件查找路径深度使用-maxdepth参数，使用方法
+	``` sh
+	find ./ -maxdepth 2 -name '*.log'
+	```
+	> -maxdepth参数需在其他参数如-name前
+	
+
+#### find常见使用命令示例
+
+1. 递归备份当前目录下特定文件
+	``` sh
+	#递归替换当前目录下所有的日志文件，备份文件名为：原文件名+.bak
+	find ./ -name '*.log' -type f -exec mv {} {}.bak \;
+	#给备份文件名添加备份时间戳
+	find ./ -name '*.log' -type f -exec mv {} {}.`date +%F%:z`.bak \;
+	```
+
+2. 升级递归替换特定文件
+	``` sh
+	find ./ -name 'spring-core-1.2.3*.jar' -type f -exec cp /spring/path/spring-core-1.4.3.jar {} \;
+	```
+	
+3. 升级递归升级替换并备份文件
+	``` sh
+	extension='.bak'
+	find ./ -name '*.jar' -type f -exec mv {} {}${extension} \;
+	find ./ -name 'spring-core-1.2.3*.jar'${extension} -type f -exec cp /spring/path/spring-core-1.4.3.jar `dirname {}` \;
+	unset extension
+	```
