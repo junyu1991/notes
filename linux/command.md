@@ -58,7 +58,7 @@
 	find ./ -name 'spring-core-1.2.3*.jar' -type f -exec cp /spring/path/spring-core-1.4.3.jar {} \;
 	```
 	
-3. 升级递归升级替换并备份文件
+3. 升级递归升级替换并备份文件(目前不可用)
 	``` sh
 	extension='.bak'
 	find ./ -name '*.jar' -type f -exec mv {} {}${extension} \;
