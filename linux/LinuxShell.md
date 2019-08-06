@@ -222,11 +222,133 @@ fi
 使用示例：
 ``` sh
 #!/bin/bash
-if [ -n $1 ] then
+if [ $# -gt 1 ] then
 	echo "第一个参数： $1"
-elif [ -n $2 ] then
+elif [ $# -gt 2 ] then
 	echo "第二个参数: $2"
 else
 	echo "没有参数"
 fi
+```
+
+2. for loop使用方法
+``` sh
+for var in item1 item2 ... itemn
+do
+	command1
+	command2
+	...
+	commandn
+done
+#或者
+for var in item1 item2 ... itemn; do command1; command2... done;
+```
+
+示例：
+``` sh
+#!/bin/sh
+
+for loop in 1 2 3 4 5
+do
+	echo "The value is: ${loop}"
+done
+
+for str in 'This is a test'
+do 
+	echo $str
+done
+```
+
+3. while loop
+``` sh
+while condition
+do 
+	command
+done
+```
+
+示例：
+``` sh
+#!/bin/bash
+int=1
+while(( $int<=5 ))
+do	
+	echo $int
+	let "int++"
+done
+```
+
+> let命令用于执行一个或多个表达式，变量计算中不需要加上$来表示变量
+
+4. until loop
+``` sh
+until condition
+do 
+	command
+done
+```
+
+示例：
+``` sh
+#!/bin/bash
+a=0
+until [ ! $a -lt 10 ]
+do 
+	echo $a
+	a=`expr $a+1`
+done
+```
+
+5. case
+``` sh
+case value in 
+mode1)
+	command
+	;;
+mode2)
+	command2
+	;;
+esac
+```
+
+case工作方式如上所示。取值后面必须为单词in，每一模式必须以右括号结束。取值可以为变量或常数。<br>
+匹配发现取值符合某一模式后，其间所有命令开始执行直至 ;;。
+取值将检测匹配的每一个模式。一旦模式匹配，则执行完匹配模式相应命令后不再继续其他模式。<br>
+如果无一匹配模式，使用星号 * 捕获该值，再执行后面的命令。 
+
+示例：
+``` sh 
+#!/bin/bash
+echo '输入 1 到 3之间的数字：'
+echo '你输入的数字为：'
+read aNum
+case $aNum in 
+	1) echo '你输入了 1'
+	;;
+	2) echo '你输入了 2'
+	;;
+	3) echo '你输入了 3'
+	;;
+	*) echo '你没有输入1到3之间的数字'
+	;;
+esac
+```
+
+6. 跳出循环
+continue和break均可跳出循环，break是跳出所有循环，continue是跳出当前循环
+
+7. 无限循环
+``` sh
+#while dead loop
+while :
+do 
+	command
+done
+# or
+while true
+do
+	command
+done
+# for dead loop
+for(( ; ; ))
 ```
