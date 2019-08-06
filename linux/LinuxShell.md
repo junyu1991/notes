@@ -109,6 +109,7 @@ echo "第三个参数为：$3"
 ```
 
 特殊字符：
+
 | 参数处理 | 说明 |
 | :--: | :--- |
 | $# | 传递到脚本的参数个数 |
@@ -198,3 +199,34 @@ echo "第三个参数为：$3"
 | -e file |	检测文件（包括目录）是否存在，如果是，则返回 true。| [ -e $file ] 返回 true。 |
 | -S file | 检测文件是否socket |  |
 | -L file | 检测文件是否存在并且是一个符号链接。 |  |
+
+## shell流程控制
+
+1. if else if使用方法
+``` sh
+if condition
+then
+	command1
+	command2
+	command3
+	....
+	commandn
+elif condition2
+then
+	command4
+else
+	command6
+fi
+```
+
+使用示例：
+``` sh
+#!/bin/bash
+if [ -n $1 ] then
+	echo "第一个参数： $1"
+elif [ -n $2 ] then
+	echo "第二个参数: $2"
+else
+	echo "没有参数"
+fi
+```
