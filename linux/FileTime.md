@@ -72,12 +72,11 @@ history -r
 
 ## 总结
 
-以上可得出结论，修改文件的access以及modify time为指定时间较为简单，但是修改change time为指定时间比较复杂，上文中的方案需要root权限，
-较为鸡肋，因此在安全排查检查异常文件时，仅仅使用ls命令会漏过异常文件，可使用stat命令查看文件的完整时间属性，也可使用find命令批量查找出change time异常的文件，如:
+以上可得出结论，修改文件的access以及modify time为指定时间较为简单，但是修改change time为指定时间比较复杂，上文中的方案需要root权限，较为鸡肋，因此在安全排查检查异常文件时，仅仅使用ls命令会漏过异常文件，可使用stat命令查看文件的完整时间属性，也可使用find命令批量查找出change time异常的文件，如:
 ``` sh
 #使用-cmin参数
 find /path -cmin +30
 #也可使用-ctime参数
 find /path -ctime +2
 ```
-> find命令使用可参考：[find命令使用][./command.md]
+> find命令使用可参考：[find命令使用](https://github.com/junyu1991/notes/blob/master/linux/command.md)
