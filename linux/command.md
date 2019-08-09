@@ -58,10 +58,15 @@
 	find ./ -name 'spring-core-1.2.3*.jar' -type f -exec cp /spring/path/spring-core-1.4.3.jar {} \;
 	```
 	
-3. 升级递归升级替换并备份文件(目前不可用)
+3. 升级递归升级替换并备份文件
 	``` sh
+	#!/bin/bash
 	extension='.bak'
 	find ./ -name '*.jar' -type f -exec mv {} {}${extension} \;
-	find ./ -name 'spring-core-1.2.3*.jar'${extension} -type f -exec cp /spring/path/spring-core-1.4.3.jar `dirname {}` \;
-	unset extension
+	for file in `find ./ -name "spring-core-1.2.3*.jar"${extension} -type f -exec dirname {} \;`
+	do
+		cp /path/spring-core-1.4.1.jar $file
+	done
 	```
+
+> 可参考：[文件升级脚本](https://github.com/junyu1991/notes/blob/master/linux/replace.sh)
