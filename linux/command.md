@@ -70,3 +70,18 @@
 	```
 
 > 可参考：[文件升级脚本](https://github.com/junyu1991/notes/blob/master/linux/replace.sh)
+
+### echo
+echo用于打印shell中的变量值或者指定字符串
+
+1. 输出至文件
+``` sh
+#输出并覆盖文件中的内容
+echo test > filename
+#将内容追加至文件末尾(会换行，即追加至文件最后一行的下一行)
+echo test >> filename
+#将内容追加至文件末尾(不会换行)
+echo -n test >> filename
+#使用-e参数激活转义字符
+echo -e 'h\tello'
+```
