@@ -352,3 +352,57 @@ done
 # for dead loop
 for(( ; ; ))
 ```
+
+## shell传参注意点
+
+1. *传参，当向shell中传递 * 号参数时需要注意，如果直接使用 * ，shell中拿到的参数会包含多个值，如以下脚本:
+``` sh
+#!/bin/bash
+if [ -n $1 ]
+then
+	echo $1
+fi
+```
+保存脚本为test_param.sh，给脚本添加运行权限，运行脚本，传递参数*.bak，结果会根据当前目录下的文件情况而不同，若当前目录下有.bak文件，
+则会输出第一个(按文件名排序).bak文件名，若没有.bak文件，则会输出*.bak，如：
+
+![运行结果](./img/param_result.png)
+
+使用'或者"包含参数会出现其他错误，如：
+
+![运行错误结果](./img/param_result_error.png)
+
+因此向shell脚本传递参数时建议使用-opt value等方式，shell脚本中获取参数则相应的使用getopt方案,如：
+``` sh
+while getopts ":b:u:p:r:h" opt
+do
+	case $opt in
+		b)
+		backup_str="$OPTARG"
+		echo "back_str: ${backup_str}"
+		;;
+		u)
+		update_str="$OPTARG"
+		echo "Update file: $update_str"
+		;;
+		p)
+		scan_path="$OPTARG"
+		echo "Scan path: $scan_path"
+		;;
+		r)
+		roll_back_file="$OPTARG"
+		echo "Roll back with file: $roll_back_file"
+		;;
+		h)
+		help
+		;;
+		?)
+		echo "Unknown args $opt"
+		exit 1;;
+	esac
+done
+```
+> 使用样例：[文件升级脚本](https://github.com/junyu1991/notes/blob/master/linux/replace.sh)
+
+使用方式为：./test_param.sh -b "*.bak"，此时就可以使用"或者'包围参数值，若没有引号包围，结果和不使用此方案结果一样，会出现参数不正确的错误。
+*在shell脚本中传递使用时，也建议使用双引号包含，若不使用双引号包含，同样会在传参过程中出现上述问题。
