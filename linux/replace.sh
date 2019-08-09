@@ -37,6 +37,7 @@ update(){
 	done
 }
 
+#rollback目前还没有比较好的思路
 rollback(){
 	echo "Roll back backup: $1"
 
