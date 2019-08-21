@@ -69,6 +69,60 @@ peerType=observer
 server.1:localhost:2181:3181:observer
 ```
 
+## Zookeeper使用ACL
 
+Zookeeper支持5种节点操作权限：
+- CREATE:创建子节点权限
+- READ:获取节点数据以及节点的子节点列表
+- WRITE:设置节点数据权限
+- DELETE:删除节点权限
+- ADMIN:为节点设置权限
+
+1. 为节点设置权限
+使用setAcl为指定节点设置权限，格式为：setAcl /node scheme:id:perm，ACL的使用方法在官方文档中并没有详细介绍。
+
+scheme介绍
+- world表示所有。创建节点的默认权限。有唯一的id是anyone授权的时候的模式为 world:anyone:rwadc 表示所有人都对这个节点有rwadc的权限。这里用的是id而不是expression
+- auth 不需要id。不过这里应该用expression来表示。即(scheme:expression:perm)
+- digest 使用用户名:密码编码成md5的方式来作为访问控制列表的id。但是这里id不作为授权语句的一部分，这里也是用expression的方式。用户名: 密码先进行sha1编码后再用base64编码。
+- host 使用用户主机名作为访问控制列表的id。但是这里需要注意的是表达式用的是主机名的后缀即可。举个例子。如果表达式设置为 corp.com可以匹配如host1.corp.com, host2.corp.com的主机名，但是不能匹配 host1.zookeeper.com这个主机名。
+- ip跟主机名类似，这里用客户端的ip地址作为访问控制列表的id。表达式可以用 addr/bits这种方式来设置ip白名单。
+
+使用auth添加授权的方式：
+```
+create /test auth
+addauth digest zookeeper:zookeeper
+setAcl /test auth:zookeeper:zookeeper:rwdac
+```
+在其他客户端需要操作该节点也需要添加验证:
+```
+addauth digest zookeeper:zookeeper
+get /test
+```
+
+使用digest添加授权方式：
+
+1. 使用加解密工具对**用户名:密码**进行处理，此处以linux shell为例:
+``` sh
+>> echo -n username:password | openssl dgst -binary -sha1 | openssl base64
+>> +Ir5sN1lGJEEs8xBZhZXKvjLJ7c=
+```
+
+2. 设置节点权限，使用步骤1中获取的加密串
+```
+create /digesttest digest
+setAcl /digesttest digest:username:+Ir5sN1lGJEEs8xBZhZXKvjLJ7c=:rwdac
+```
+
+3. 添加验证，使用节点
+```
+addauth digest username:password
+get /digesttest
+```
+
+忘记密码处理：
+修改zookeeper配置文件，添加**skipACL=yes**，然后重启zookeeper服务，所有操作即可跳过ACL检测。
+
+> 参考链接：[Zookeeper权限管理之坑](https://www.jianshu.com/p/147ca2533aff)
 
 
