@@ -6,7 +6,7 @@
 1. 作用于类上，需要和@Configuration注解一起使用，决定该配置类是否生效
 2. 作用于方法上，需要和@Bean注解一起使用，判断该Bean是否生成
 
-> 转载自：[https://www.cnblogs.com/ashleyboy/p/9425179.html][https://www.cnblogs.com/ashleyboy/p/9425179.html]
+> 转载自：[https://www.cnblogs.com/ashleyboy/p/9425179.html](https://www.cnblogs.com/ashleyboy/p/9425179.html)
 
 #### 1.1 Bean条件装配
 
