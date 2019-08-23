@@ -108,6 +108,9 @@ get /test
 >> +Ir5sN1lGJEEs8xBZhZXKvjLJ7c=
 ```
 
+> 使用java计算时的步骤为：1. 计算**username:password**的sha1消息摘要（结果使用byte数组保存）；2. 计算步骤1中结果的base64编码即可得到结果。
+> 代码参考：[ZookeeperUtil.java](https://github.com/junyu1991/zookeeper-study/blob/master/src/main/java/com/yujun/zookeeper/util/ZookeeperUtil.java)，[EncryptUtil.java](https://github.com/junyu1991/zookeeper-study/blob/master/src/main/java/com/yujun/zookeeper/util/EncryptUtil.java)
+
 2. 设置节点权限，使用步骤1中获取的加密串
 ```
 create /digesttest digest
