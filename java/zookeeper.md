@@ -24,7 +24,7 @@ zookeeper提供的命名空间和标准的文件系统非常相似，一个命�
 watch事件被触发时，添加了该节点监控(watch)的客户端会收zookeeper server发送的信息(需要客户端和zookeeper服务之间保持连接)，包信息中不包括节点的新状态（节点值或者节点是否存在）
 watch事件通知是一次性的，触发watch事件后并发送信息后，之前设置的监控就失效了，后续节点变化就不会再通知客户端了，如果需要继续监视节点，则需重新添加监控事件。
 
-> 如需要监控指定节点的子节点的创建和删除事件，在代码中需要是用getChildren(String path, Watcher watcher) API，无法直接监控指定节点的子节点内容修改事件。
+> 如需要监控指定节点的子节点的创建和删除事件，在代码中需要是用``` getChildren(String path, Watcher watcher)``` API，无法直接监控指定节点的子节点内容修改事件。
 
 3. zookeeper节点常见的操作:
  3.1 create 创建节点
@@ -81,7 +81,7 @@ Zookeeper支持5种节点操作权限：
 - ADMIN:为节点设置权限
 
 1. 为节点设置权限
-使用setAcl为指定节点设置权限，格式为：setAcl /node scheme\:id:perm，ACL的使用方法在官方文档中并没有详细介绍。
+使用setAcl为指定节点设置权限，格式为：```setAcl /node scheme:id:perm```，ACL的使用方法在官方文档中并没有详细介绍。
 
 scheme介绍
 - world表示所有。创建节点的默认权限。有唯一的id是anyone授权的时候的模式为 world:anyone:rwadc 表示所有人都对这个节点有rwadc的权限。这里用的是id而不是expression
