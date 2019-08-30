@@ -81,7 +81,7 @@ Zookeeper支持5种节点操作权限：
 - ADMIN:为节点设置权限
 
 1. 为节点设置权限
-使用setAcl为指定节点设置权限，格式为：setAcl /node scheme:id:perm，ACL的使用方法在官方文档中并没有详细介绍。
+使用setAcl为指定节点设置权限，格式为：setAcl /node scheme\:id:perm，ACL的使用方法在官方文档中并没有详细介绍。
 
 scheme介绍
 - world表示所有。创建节点的默认权限。有唯一的id是anyone授权的时候的模式为 world:anyone:rwadc 表示所有人都对这个节点有rwadc的权限。这里用的是id而不是expression
