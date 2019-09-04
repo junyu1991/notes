@@ -18,7 +18,8 @@ driver = webdriver.Chrome(executable_path='chrome-driver-path', options=options)
 1. 获取body元素的尺寸
 2. 按照body元素的尺寸设置window size
 3. 截图
-具体使用方法如下：
+
+具体代码如下：
 ``` python
 from selenium import webdriver
 options = webdriver.ChromeOptions()
