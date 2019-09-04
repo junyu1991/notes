@@ -14,6 +14,7 @@ driver = webdriver.Chrome(executable_path='chrome-driver-path', options=options)
 ## 进行全网页截图的解决方案
 使用selenium和chrome-headeless可对网页进行截图，```driver.save_screenshot('/path/screenshot.jpg')```即可截图，但是只能截出部分网页图片，如
 ![screenShot](./img/screent_1.jpg)
+
 通过研究发现，使用selenium截出的图片大小主要受driver的window_size控制，因此，如果将window_size设置为较大值，则可以截出全网页图片，但如果window_size设置值过大，会导致截图较慢，
 影响程序性能，因此可先获取全网页的长宽，再将window_size设置为全网页的长宽即可。具体思路如下：
 1. 获取body元素的尺寸
@@ -33,7 +34,7 @@ driver.set_window_size(size.get('width'), size.get('height')) #按照body元素�
 driver.save_screenshot('/path/screenshot.jpg') #截图
 driver.close()
 ```
-运行结果截图：![运行结果](./img/screen_2.jpg)
+运行结果：[screen_2.jpg](https://github.com/junyu1991/notes/blob/master/python/img/screen_2.jpg)
 
 > 此方案主要依照html中的body元素的长宽来决定窗口的大小，因此截图的结果受body元素的长宽影响，所以在某些页面截图效果不完整，如：豆瓣
 
