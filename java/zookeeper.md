@@ -130,4 +130,21 @@ get /digesttest
 
 > 参考链接：[Zookeeper权限管理之坑](https://www.jianshu.com/p/147ca2533aff)
 
+## Zookeeper配置
 
+1. globalOutstandingLimit用于限制客户端的请求数，默认为1000，客户端提交请求的速度能比Zookeeper处理请求的速度更快，zookeeper会将请求存储在queue中，因此为了防止因为请求过多导致的
+内存耗尽的问题，所以需要限制客户端的请求数，使得queue中最大的未处理请求数为globalOutstandingLimit，默认为1000。(可使用java系统变量zookeeper.globalOutstandingLimit设置)。
+2. dataLogDir用于设置zookeeper日志目录
+3. snapCount Zookeeper使用快照和事务日志记录事务。snapCount用于设置在快照之前记录在事务日志中的事务数。为防止所有的zookeeper同时执行快照操作，每个ZooKeeper服务器将在事务日志中的
+事务数达到[snapCount / 2 + 1， snapCount]中的一个随机数值时进行快照操作。snapCount默认值为100000
+4. preAllocSize To avoid seeks ZooKeeper allocates space in the transaction log file in blocks of preAllocSize kilobytes. The default block size is 64M. One reason for changing the size of the blocks is to reduce the block size if snapshots are taken more often. (Also, see snapCount).
+5. maxClientCnxns限制但IP客户端对Zookeeper集合中的单个成员的并发连接数（在socket层面限制）。默认为60，如果设置为0则是无限制。
+6. clientPortAddress 设置zookeeper server绑定的ip地址(version 3.3.0)
+
+Zookeeper AdminServer配置
+Zookeeper在3.5.0之后就提供了AdminServer服务，可通过http访问获取zookeeper server部分运行信息，默认开启该服务，以下是几个配置项：
+1. admin.enableServer(Java System property:zookeeper.admin.enableServer)是否在启动zookeeper server时启动zookeeper AdminServer，默认为true，即启动该服务。
+2. admin.serverAddress(Java System property:zookeeper.admin.serverAddress)Zookeeper AdminServer绑定的服务IP，默认0.0.0.0
+3. admin.serverPort(Java System property:zookeeper.admin.serverPort)Zookeeper AdminServer（使用的是Jetty）监听的端口。
+4. admin.idleTimeout(Java System property:zookeeper.admin.idleTimeout)设置连接在发送或接收数据之前可以等待的最长空闲时间（以毫秒为单位）。默认为30000。
+5. admin.commandURL(Java System property:zookeeper.admin.commandURL)AdminServer url,默认为"/commands"。
