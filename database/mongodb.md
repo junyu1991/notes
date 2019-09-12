@@ -150,11 +150,11 @@ db.collection.find({status:"D"}) #按照条件查询文档集合
 db.collection.findOne({status:"D"}) #按照条件查询并获取一个结果
 ```
 MongoDB支持条件查询，支持的条件查询如下：
-- {<filed>:<value>} 指定相等条件。
-- {<filed1>: { <operator1>: <value1>}, ... } 指定查询条件，如：{status: {$in: ["A","D"]}}，使用了in操作符。
+- {\<filed\>:\<value\>} 指定相等条件。
+- {\<filed1\>: { \<operator1\>: \<value1\>}, ... } 指定查询条件，如：{status: {$in: ["A","D"]}}，使用了in操作符。
 > 当对同一字段进行条件筛选时，推荐使用$in操作符而不是$or操作
-- {<filed1>:<value1>, <filed2>:<value2>}指定AND，当两个条件并列时就可看做使用了AND操作，如: db.test.find({status:"a", qty: {$lt:30}})条件就为：status="a" and qty < 30
-- 使用$or表达OR操作符，使用示例：db.test.find({$or: [{status:"a"}, {qty: {$lt: 30}}]})解释为：status="a" or qty < 30
+- {\<filed1\>:\<value1\>, \<filed2\>:\<value2\>}指定AND，当两个条件并列时就可看做使用了AND操作，如: db.test.find({status:"a", qty: {$lt:30}})条件就为：status="a" and qty \< 30
+- 使用$or表达OR操作符，使用示例：db.test.find({$or: [{status:"a"}, {qty: {$lt: 30}}]})解释为：status="a" or qty \< 30
 - AND和OR可同时使用，使用示例：db.test.find({status: "A", $or: [{qty: {$lt: 30}}, { item: /^p/}]})解释为：status="a" and (qty<30 or item like "%p")
 - MongoDB支持的其他表达式：$gt(>), $lt(<), $gte(>=), $lte(<=)
 - MongoDB支持正则表达式，使用方式如下：
