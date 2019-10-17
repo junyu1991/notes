@@ -14,7 +14,7 @@
     <artifactId>spring-data-mongodb</artifactId>
 	<!-- 如果要使用其他的数据库则修改spring-data-mongodb为指定数据库，如:spring-data-redis -->
   </dependency>
-<dependencies>
+</dependencies>
 <dependencyManagement>
   <dependencies>
     <dependency>
@@ -177,3 +177,79 @@ public VideoInfo findAndReplace(VideoInfo videoInfo, Map<String, Object> filter)
         this.getMongoTemplate().findAllAndRemove(query, collectionName);
     }
 ```
+
+6. 查询操作
+
+查询的方法主要包括：
+- findAll: 从集合中查询所有同一类型的文档列表。
+- findOne: 从集合中查找符合条件的第一个文档
+- findById: 按照_id值查找文档
+- find: 从集合中查找符合筛选条件的文档列表
+- findAndRemove: 从集合中查找符合条件的文档从中删除第一个文档并返回被删除的文档。
+查询主要使用**Query**，**Query**使用**Criteria**进行查询条件的组装。使用Query的limit(int limit)方法限制查询条数，
+使用with(Sort sort)进行排序查询，使用with(Pageable pageable)进行分页查询，Pageable也可进行排序。
+使用示例如下：
+``` java
+/**
+ * 按照条件分页查询
+ * @author: admin
+ * @date: 2019/10/17
+ * @param pageSize
+ * @param pageNo
+ * @param filename
+ * @param orderFiled
+ * @return: {@link List< FileInfo>}
+ * @exception:
+*/
+public List<FileInfo> queryPageFileInfo(int pageSize, int pageNo, String filename, String orderFiled) {
+    Query query = new Query();
+    Criteria criteria = Criteria.where("filename").regex(filename);
+    query.addCriteria(criteria);
+    Pageable pageable = new QueryPage(pageNo, pageSize, Sort.by(orderFiled));
+    query.with(pageable);
+    return this.getMongoTemplate().find(query, FileInfo.class, "file");
+}
+/**
+ * 查询size个FileInfo
+ * @author: yujun
+ * @date: 2019/10/17
+ * @description: TODO
+ * @param size
+ * @return: {@link List< FileInfo>}
+ * @exception:
+*/
+public List<FileInfo> queryFileInfo(int size, long fileSize, String filename, String orderFiled) {
+    Query query = new Query();
+    Criteria criteria = Criteria.where("fileSize").lt(fileSize);
+    criteria.andOperator(criteria.where("filename").regex(filename));
+    query.addCriteria(criteria);
+    query.limit(size);
+    query.with(Sort.by(orderFiled, "filename"));
+    return this.getMongoTemplate().find(query, FileInfo.class, "file");
+}
+```
+
+7. 查询不同的值
+使用distinct("filedName")可从符合查询条件的结果中查询filedName不同的文档，返回结果为filedName的列表。
+使用示例：
+``` java
+/**
+ * 查询相同文件大小的不同文件信息，使用filename区分
+ * @author: admin
+ * @date: 2019/10/17
+ * @param fileSize
+ * @return: {@link List< String>}
+ * @exception:
+*/
+public List<String> queryFileInfoByFileSize(long fileSize) {
+    Query query = Query.query(Criteria.where("fileSize").is(fileSize));
+    List<FileInfo> filename = null;
+    try {
+        filename = this.getMongoTemplate().query(FileInfo.class).inCollection("file").distinct("filePath").matching(query).as(FileInfo.class).all();
+    } catch (DataAccessException e) {
+        log.error("Get result failed.", e);
+    }
+    return filename;
+}
+```
+使用as(Class clazz)可指定查询结果的类类型。all()方法用于返回所有符合条件的结果，该方法会抛出**DataAccessException**异常。
