@@ -207,7 +207,7 @@ public List<FileInfo> queryPageFileInfo(int pageSize, int pageNo, String filenam
     query.addCriteria(criteria);
     Pageable pageable = new QueryPage(pageNo, pageSize, Sort.by(orderFiled));
     query.with(pageable);
-    return this.getMongoTemplate().find(query, FileInfo.class, "file");
+    return this.getMongoTemplate().find(query, FileInfo.class, "file_collection");
 }
 /**
  * 查询size个FileInfo
@@ -225,7 +225,7 @@ public List<FileInfo> queryFileInfo(int size, long fileSize, String filename, St
     query.addCriteria(criteria);
     query.limit(size);
     query.with(Sort.by(orderFiled, "filename"));
-    return this.getMongoTemplate().find(query, FileInfo.class, "file");
+    return this.getMongoTemplate().find(query, FileInfo.class, "file_collection");
 }
 ```
 
@@ -245,7 +245,7 @@ public List<String> queryFileInfoByFileSize(long fileSize) {
     Query query = Query.query(Criteria.where("fileSize").is(fileSize));
     List<FileInfo> filename = null;
     try {
-        filename = this.getMongoTemplate().query(FileInfo.class).inCollection("file").distinct("filePath").matching(query).as(FileInfo.class).all();
+        filename = this.getMongoTemplate().query(FileInfo.class).inCollection("file_collection").distinct("filePath").matching(query).as(FileInfo.class).all();
     } catch (DataAccessException e) {
         log.error("Get result failed.", e);
     }
@@ -253,3 +253,23 @@ public List<String> queryFileInfoByFileSize(long fileSize) {
 }
 ```
 使用as(Class clazz)可指定查询结果的类类型。all()方法用于返回所有符合条件的结果，该方法会抛出**DataAccessException**异常。
+
+8. 地理空间查询
+MongoDB支持地理空间查询，主要支持图形包括：圆，方框，以及点。查询的方法包括：$near, $within, geoWithin, 以及 $nearSphere。
+[使用示例代码](https://github.com/junyu1991/database/blob/master/MongoDB/src/main/java/com/yujun/database/mongodb/geo/GeoQuery.java)
+
+9. 文本搜索
+MongoDB支持文本搜索，需要使用文本搜索时，先创建被搜索字段的索引，并设置搜索字段的权重。
+[Java使用示例代码](https://github.com/junyu1991/database/blob/master/MongoDB/src/main/java/com/yujun/database/mongodb/text/TextSearch.java)
+
+10. 归类(根据语言归类，如：英语，中文，法语等)
+MongoDB 3.4之后就支持了用于收集和索引创建以及各种查询操作的归类。
+``` java
+Collation collation = Collation.of("fr")         
+  .strength(ComparisonLevel.secondary()          
+  .includeCase())
+  .numericOrderingEnabled()                      
+  .alternate(Alternate.shifted().punct())        
+  .forwardDiacriticSort()                        
+  .normalizationEnabled();   
+```
