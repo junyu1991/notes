@@ -1,12 +1,12 @@
 # MongoDB使用
 
-## Java中使用MongoDB
+## Spring-data方式
 
-#### Spring-data方式
+> 官方文档地址：[Documentation](https://docs.spring.io/spring-data/mongodb/docs/current/reference/html/)
 
-官方文档地址：[Documentation](https://docs.spring.io/spring-data/mongodb/docs/current/reference/html/)
+#### 一 添加Maven依赖包
 
-1. 申明maven依赖，向pom文件中添加```<dependencyManagement \>```，再添加```<dependency/>```
+向pom文件中添加```<dependencyManagement \>```，再添加```<dependency/>```
 ``` xml
 <dependencies>
   <dependency>
@@ -35,8 +35,168 @@ spring-data-releasetrain版本解释：
 - SR1, SR2等： 服务发布版
 如果想要升级项目使用的spring-data-jpa版本，只需要升级spring-data-releasetrain的版本即可。
 
+#### 二 连接MongoDB(初始化MongoDB Client客户端)
 
-#### MongoDB方法
+1. 初始化MongoClient
+```com.mongodb.MongoClient```是MongoDB驱动程序API的入口点，所有其他的接口都会依靠该接口。
+MongoClient初始化主要需要Server host以及port，某些配置了用户名以及用户密码的MongoDB Server还需设置用户名密码，若Server
+端使用的是集群模式，初始化MongoClient时则需要传入MongoDB Server端的所有host以及端口。
+
+初始化MongoClient可使用Java代码初始化，也可使用Spring XML进行配置初始化
+
+Java初始化代码：
+``` java
+	/**
+     * 只是用host以及port初始化MongoClient
+     * @author: yujun
+     * @date: 2019/10/24
+     * @param
+     * @return: {@link com.mongodb.MongoClient}
+     * @exception:
+    */
+    @Bean("simpleMongoClient")
+    public MongoClient simpleMongoClient() {
+        return new MongoClient(host, port);
+    }
+
+    /**
+     * 使用集群MongoDB server初始化MongoClient，Spring会扫描所有的MongoDB Server节点，获取集群信息
+     * @author: yujun
+     * @date: 2019/10/24
+     * @param
+     * @return: {@link com.mongodb.MongoClient}
+     * @exception:
+    */
+    @Bean("mongoClientWithReplicat")
+    public MongoClient mongoClientWithReplicat() {
+        MongoClient mongoClient = new MongoClient(getAllServerAddress());
+        return mongoClient;
+    }
+
+    /**
+     * 将配置文件中的MongoDB Server连接方式(host:port)转换成ServerAddress列表
+     * 配置文件中的配置示例： 192.168.0.102:21017, 192.168.0.107:21017
+     * @author: yujun
+     * @date: 2019/10/24
+     * @param
+     * @return: {@link java.util.List<com.mongodb.ServerAddress>}
+     * @exception:
+    */
+    private List<ServerAddress> getAllServerAddress() {
+        List<String> strings = Arrays.asList(hosts);
+        List<ServerAddress> serverAddresses = new ArrayList<>();
+        for(String host : strings) {
+            String[] split = host.split(":");
+            if(split.length == 2) {
+                serverAddresses.add(new ServerAddress(split[0], Integer.parseInt(split[1])));
+            }
+        }
+        return serverAddresses;
+    }
+
+    /**
+     * 使用MongoClientOptions以及MongoCredential(用于配置用户名以及密码相关项目)初始化MongoClient
+     * 若MongoDB Server是集群模式，则初始化MongoClient时传入<code>List<ServerAddress></code>即可
+     * @author: yujun
+     * @date: 2019/10/14
+     * @description: TODO
+     * @param
+     * @return: {@link MongoClient}
+     * @exception:
+    */
+    @Bean(name = "mongoClient")
+    public MongoClient mongoClient() {
+        MongoClientOptions mongoClientOptions = mongoClientOptions();
+        ServerAddress serverAddress = new ServerAddress(host, port);
+        MongoCredential mongoCredential = MongoCredential.createCredential(userName, userDb, password.toCharArray());
+        //return new MongoClient(getAllServerAddress(), mongoCredential, mongoClientOptions); //使用List<ServerAddress>初始化即可使用Mongo集群
+        return new MongoClient(serverAddress, mongoCredential, mongoClientOptions);
+    }
+```
+完成代码示例：[Connector.java](https://github.com/junyu1991/database/blob/master/MongoDB/src/main/java/com/yujun/database/mongodb/Connector.java)
+[XML示例](https://github.com/junyu1991/database/blob/master/MongoDB/src/main/resources/spring-mongo.xml)
+
+2. MongoDbFactory
+```com.mongodb.MongoClient```是MongoDB驱动程序API的入口点，但如果需要对mongodb 数据库进行操作，还需要其他的信息，如：数据库名，
+用户名以及密码(用户名以及密码可在初始化MongoClient时设置)，通过以上信息，就可获得```com.mongodb.client.MongoDatabase```对象，
+可使用该对象进行collection相关操作，如：创建，查询，删除。Spring提供了```org.springframework.data.mongodb.core.MongoDbFactory```
+接口来进行MongoDbFactory管理。
+
+MongoDbFactory初始化标准代码：
+``` java
+	/**
+     * 初始化MongoDbFactory
+     * @author: yujun
+     * @date: 2019/10/24
+     * @param
+     * @return: {@link org.springframework.data.mongodb.MongoDbFactory}
+     * @exception:
+    */
+    @Bean(name = "mongoDbFactory")
+    public MongoDbFactory mongoDbFactory() {
+        SimpleMongoDbFactory simpleMongoDbFactory = new SimpleMongoDbFactory(mongoClient(), database);
+        MongoDatabase db = simpleMongoDbFactory.getDb();//可获取MongoDatabase对象
+        return simpleMongoDbFactory;
+    }
+```
+
+3. MongoTemplate
+```org.springframework.data.mongodb.core.MongoTemplate```是提供MongoDB增删改查方法主要类。
+MongoTemplate可使用MongoDbFactory初始化，同时还可指定MappingMongoConverter；也可直接使用MongoClient以及数据库名初始化。
+
+初始化代码：
+``` java
+	/**
+     * 使用mongoClient以及数据库名初始化MongoTemplate
+     * @author: yujun
+     * @date: 2019/10/24
+     * @param
+     * @return: {@link org.springframework.data.mongodb.core.MongoTemplate}
+     * @exception:
+    */
+    public MongoTemplate simpleMongoTemplate() {
+        return new MongoTemplate(mongoClient(), database);
+    }
+    
+    /**
+     * 使用MongoDbFactory初始化MongoTemplate
+     * @author: yujun
+     * @date: 2019/10/24
+     * @param
+     * @return: {@link org.springframework.data.mongodb.core.MongoTemplate}
+     * @exception:
+    */
+    @Bean(name = "mongoTemplate")
+    public MongoTemplate mongoTemplate() throws Exception {
+        MongoTemplate mongoTemplate = new MongoTemplate(mongoDbFactory());
+    /*    MappingMongoConverter mappingMongoConverter = super.mappingMongoConverter();
+        mappingMongoConverter.setTypeMapper(new DefaultMongoTypeMapper(null));
+        mongoTemplate = new MongoTemplate(mongoDbFactory(), mappingMongoConverter);*/
+        return mongoTemplate;
+    }
+
+    /**
+     * 使用MongoDbFactory以及MappingMongoConverter初始化MongoTemplate
+     * @author: yujun
+     * @date: 2019/10/24
+     * @param
+     * @return: {@link org.springframework.data.mongodb.core.MongoTemplate}
+     * @exception:
+    */
+    @Bean(name = "geoMongoTemplate")
+    public MongoTemplate geoMongoTemplate() throws Exception {
+        MongoTemplate mongoTemplate = null;
+        MappingMongoConverter mappingMongoConverter = super.mappingMongoConverter();
+        mappingMongoConverter.setTypeMapper(new DefaultMongoTypeMapper(null));
+        mongoTemplate = new MongoTemplate(new SimpleMongoDbFactory(mongoClient(), geoDatabase), mappingMongoConverter);
+        return mongoTemplate;
+    }
+```
+
+关于MongoDB文档与实体类之间的映射，Spring使用的是```MongoConverter```接口的实现类，Spring提供了```MappingMongoConverter```(MongoTemplate默认使用的映射类)类。
+如果有需求，可自行实现```MongoConverter```接口。
+
+#### 三 进行MongoDB增删改查操作
 
 1. 插入
 插入主要使用MongoTemplate.insert()或者insertALL()方法，
