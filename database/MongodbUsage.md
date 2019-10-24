@@ -433,3 +433,31 @@ Collation collation = Collation.of("fr")
   .forwardDiacriticSort()                        
   .normalizationEnabled();   
 ```
+
+11. Json协议
+MongoDB 3.6之后就支持了Json协议，可在创建collection使用Json协议来规定保存在该collection下的文档的格式等信息。如：
+``` json
+{
+  "type": "object",                                                        
+  "required": [ "firstname", "lastname" ],                                 
+  "properties": {                                                          
+    "firstname": {                                                         
+      "type": "string",
+      "enum": [ "luke", "han" ]
+    },
+    "address": {                                                           
+      "type": "object",
+      "properties": {
+        "postCode": { "type": "string", "minLength": 4, "maxLength": 5 }
+      }
+    }
+  }
+}
+```
+使用Java代码构建以上json协议为：
+``` java
+MongoJsonSchema.builder().
+
+```
+12. 
+12. 
