@@ -1,0 +1,10 @@
+2019-10-27 14:36:43,556 - simpleExample - DEBUG - Debug message
+2019-10-27 14:36:43,556 - simpleExample - INFO - Info message
+2019-10-27 14:36:43,556 - simpleExample - WARNING - Warning message
+2019-10-27 14:36:43,556 - simpleExample - ERROR - Error message
+2019-10-27 14:36:43,556 - simpleExample - CRITICAL - Critical message
+2019-10-27 14:36:58,566 - simpleExample - DEBUG - Debug message
+2019-10-27 14:36:58,567 - simpleExample - INFO - Info message
+2019-10-27 14:36:58,567 - simpleExample - WARNING - Warning message
+2019-10-27 14:36:58,567 - simpleExample - ERROR - Error message
+2019-10-27 14:36:58,567 - simpleExample - CRITICAL - Critical message
