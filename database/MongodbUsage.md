@@ -460,3 +460,7 @@ MongoJsonSchema.builder().
 
 #### 四. 索引
 ```MongoTemplate```提供了操作索引以及集合的方法。
+操作索引(index)主要使用indexOps，对索引的操作包括：查询所有索引，删除指定索引，删除所有索引，给指定字段创建索引。
+索引操作示例：[Example](https://github.com/junyu1991/database/blob/master/MongoDB/src/main/java/com/yujun/database/mongodb/index/IndexOperation.java)
+操作集合(collection)直接使用MongoTemplate即可，提供测操作包括：获取所有集合名，获取指定集合，删除集合，创建集合，查询是否存在某指定集合。
+集合操作示例：[Example](https://github.com/junyu1991/database/blob/master/MongoDB/src/main/java/com/yujun/database/mongodb/collection/CollectionOperation.java)

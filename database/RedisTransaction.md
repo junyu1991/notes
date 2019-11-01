@@ -24,6 +24,7 @@ QUEUED
 1) (integer) 1
 2) (integer) 1
 ```
+Redis事务是以**multi**命令开始的，以**exec**命令为结束，可将**exec**命令视为sql中commit语句。
 
 > 当执行一个事务时，在未提交**exec**命令之前，其他客户端对事务中操作的key的操作是有效的，如以上示例中，
 在exec之前，另一个客户端执行```incr foo```命令会增加foo的值，而以上事务执行结果也会更改为：foo=2,bar=1。

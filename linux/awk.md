@@ -42,3 +42,10 @@ awk [选项参数] -f scriptfile var=value file(s)
 | SUBSEP |	数组下标分隔符(默认值是/034) |
 
 参考链接：[Awk 内建变量](https://www.runoob.com/w3cnote/8-awesome-awk-built-in-variables.html)
+
+## 使用示例：
+
+1. 打印第一列不为空的行
+``` shell
+awk -F '\t' '{if($1!="") print $0}'
+```
