@@ -15,22 +15,14 @@ select top子句对于用于数千条记录的大型表来说是非常有用的�
 
 > 并不是所有的数据库都支持select top语句。mysql支持limit语句来选取指定的条数数据，oracle可以使用rownum来选取。
 
-### SQL Server/MS Access语法
 ``` sql
+-- SQL Server/MS Access语法
 select top number|percent column_name(s) from table_name;
-```
-select top percent 示例：
-``` sql
+-- SQL Server/MS Access select top percent 示例：
 select top 50 percent * from table_name;
-```
-
-### MySQL语法
-``` sql
+-- MySQL语法
 select column_name(s) from table_name limit number;
-```
-
-### Oracle语法
-``` sql
+--Oracle语法
 select column_name(s) from table_name where rownum <= number;
 ```
 
@@ -160,4 +152,131 @@ CREATE TABLE Orders
 );
 ```
 - 使用alter table创建外键约束：
+``` sql
+-- MySQL / SQL Server / Oracle / MS Access：
+alter table Orders add foreign key (P_Id) peferences Persons(P_Id);
+-- 对外键命名
+alter table Orders add constraint fk_PerOrders foreign key (P_Id) peferences Persons(P_Id);
+```
 
+- 删除外键
+``` sql
+-- MySQL
+alter table Orders drop foreign key fk_PerOrder;
+-- SQL Server/Oracle/MS Access
+alter table Orders drop constraint fk_PerOrder;
+```
+
+## sql create index
+create index语句用于在表中创建索引。在不读取整个表的情况下，索引是数据库应用程序可以更快的查找数据。
+
+> 更新一个包含索引的表需要比更新一个没有索引的表花费更多的时间，因为索引本身也需要更新。因此建议在常常被搜索的列(以及表)上面创建索引。
+
+1. 创建简单的索引，允许使用重复的值：
+``` sql
+create index index_name on table_name (column_name);
+```
+
+2. 创建一个唯一的索引，不允许使用重复的值：唯一的索引意味着两个行不能拥有相同的索引值。
+``` sql
+create unique index index_name on table_name(column_name);
+```
+> 用于创建索引的语法在不同的数据库中不一样。
+
+3. 删除索引
+``` sql
+-- MS Access
+drop index index_name on table_name;
+-- MS SQL Server
+drop index table_name.index_name;
+-- DB2/Oracle
+drop index index_name;
+-- Mysql
+alter table table_name drop index index_name;
+``` 
+
+## sql alter table
+alter table语句可用于在已有的表中添加，删除或修改列。
+1. 添加列
+``` sql
+alter table table_name add column_name datatype;
+```
+2. 删除列（某些数据库系统不支持这种删除方式）
+``` sql
+alter table table_name drop column_name;
+```
+3. 修改列
+``` sql
+-- SQL Server/MS Access
+alter table table_name alter column column_name datatype;
+-- Mysql /Oracle
+alter table table_name modify column_name datatype;
+```
+> 当要修改的列中存在数据时，oracle不允许直接修改列的定义，此时则可以依次执行：数据备份，删除旧数据，修改列，恢复数据的操作。如：
+``` sql
+select column_name(s) into tablename_bak from tablename;
+delete from tablename where 1=1;
+-- 或者使用：truncate table tablename;
+alter table tablename modify column_name datatype;
+select column_name(s) into tablename from tablename_bak;
+```
+
+## sql auto increment
+auto-increment会在新纪录插入表中是生成一个唯一的数字。
+对于不同的数据库系统，auto increment语法个不相同。
+``` sql
+-- mysql
+create table Persons(
+		id int not null auto_increment,
+		soul varchar(2048) not null,
+		lastname varchar(256) not null,
+		firstname varchar(255),
+		address varchar(255),
+		city varchar(255),
+		primary key (id),
+		unique (soul)
+		);
+--auto_increment默认起始值是1，每条新纪录递增1，若想使用其他起始值可使用以下语句修改：
+alter table Persons auto_increment=100;
+
+-- SQL Server
+create table Persons(
+		id int identity(1,1) primary key,
+		soul varchar(2048) not null unique,
+		lastname varchar(256) not null,
+		firstname varchar(255),
+		address varchar(255),
+		city varchar(255)
+		);
+--SQL Server使用identity来执行auto-increment任务，上面的示例中开始值是1，每条新纪录递增1，要规定 "ID" 列以 10 起始且递增 5，只需把 identity 改为 IDENTITY(10,5)。
+
+-- Access
+create table Persons(
+		id integer primary key autoincrement,
+		soul varchar(2048) not null unique,
+		lastname varchar(256) not null,
+		firstname varchar(255),
+		address varchar(255),
+		city varchar(255)
+		);
+--MS Access 使用 AUTOINCREMENT 关键字来执行 auto-increment 任务。默认地，AUTOINCREMENT 的开始值是 1，每条新记录递增 1。提示：要规定 "ID" 列以 10 起始且递增 5，请把 autoincrement 改为 AUTOINCREMENT(10,5)。
+```
+Oracle没有auto increment相关关键字，想要使用auto increment则需要先创建序列，然后在插入语句时使用创建好的序列，如：
+``` sql 
+create sequence seq_person
+	minvalue 1
+	start with 1
+	increment by 1
+	cache 10
+
+create table Persons(
+		id integer primary key,
+		soul varchar(2048) not null unique,
+		lastname varchar(256) not null,
+		firstname varchar(255),
+		address varchar(255),
+		city varchar(255)
+		);
+
+insert into Persons (id, soul, lastname) values (seq_person.nexval, 'happy', 'Monsen');
+```
