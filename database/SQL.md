@@ -267,7 +267,7 @@ create sequence seq_person
 	minvalue 1
 	start with 1
 	increment by 1
-	cache 10
+	cache 10;
 
 create table Persons(
 		id integer primary key,
