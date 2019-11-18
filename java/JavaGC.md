@@ -61,6 +61,67 @@ Java的自动垃圾回收（GC）机制主要用于管理JVM中的堆(heap)区�
 8. 以上步骤基本覆盖了年轻代的GC操作。最终，major GC操作会清理并压缩老年代中的空间。
 ![](./img/collection_result.PNG)
 
+#### 2.3 垃圾回收查看
+
+本机中的JVM进程垃圾回收查看可通过jdk自带的visual vm工具进行查看。(该工具也可单独下载使用)
+
+#### 2.4 垃圾回收算法
+
+常用的与GC相关的JVM命令行参数：
+| 参数 | 描述 |
+| :--- | :--- |
+| -Xms | 设置JVM启动时堆的初始值内存大小 |
+| -Xmx | 设置JVM堆最大的内存大小 |
+| -Xmn | 设置年轻代的内存大小 |
+| -XX:PermSize | 设置永久代(Permanent Generation)起始内存大小 |
+| -XX:MaxPermSize | 设置永久代(Permanent Generation)最大内存大小 |
+
+命令行参数与各个世代之间的关系图如下：
+![](./img/jvm_command.png)
+
+1. Serial GC(串行垃圾回收算法)
+
+Serial GC是Java SE 5和6的默认回收算法。**对于Serial GC，minor以及major垃圾回收都是串行执行的（使用单核CPU）**。Serial GC使用的是**标记-压缩**方法，Serial GC会将堆中的老对象移动到堆的开头，以便新分配的内存能够以连续的内存块分配在堆的末尾。这样做有利于更快的为堆分配新的空间。
+Serial GC适用于对JVM暂停时间不敏感的应用（因为是串行回收的，所以对于堆空间较大的应用每次**Stop World**时间会较长），该算法只会使用单核CPU，因此对于当前机器普遍是多核CPU的情况，该算法可能会造成硬件资源浪费的情况。但是对于堆空间较小如几百兆的应用而言，Serial GC仍能很有效的进行垃圾回收，暂停时间也会较短(进行一个full gc可能会花费几秒钟)。
+Serial GC还适用于同一环境下有很多个JVM运行的情况（某些情况下，可能JVM的数量大于CPU的数量）。在这种情况下，只使用一个CPU核心进行垃圾回收可以最大程度上减少对其他JVM进程的干扰，即使可能GC的时间比较长。Serial GC对于这种情况是比较折中的方案。
+总之Serial GC适用于内存占用较小的应用以及单CPU环境。
+
+开启Serial GC的命令行参数是：```-XX:+UseSerialGC```
+示例:
+``` shell
+java -Xmx12m -Xms3m -Xmn1m -XX:PermSize=20M -XX:MaxPermSize=20M -XX:+UseSerialGC -jar /path/to/demo.jar
+```
+
+2. Parallel GC(并行垃圾回收算法)
+
+**Parallel GC使用多线程对年轻代进行垃圾回收**。Parallel GC的线程数默认与应用所在机器的CPU核心数量相同，也可通过参数：``` -XX:ParallelGCThreads=<desired number> ```，当在单核CPU运行JVM进程时，即使指定了Parallel GC算法，JVM也不会使用该算法而是默认的GC算法。对于多核CPU环境，Parallel GC的垃圾回收效率要优于默认的垃圾回收算法，且年轻代GC暂停时间会更短。
+Parallel GC使用了多线程来加快应用的吞吐速度，因此Parallel GC适用于需要完成大量任务且接受长时间的暂停的应用(?)如应用进场执行打印较长的信息或者大量的sql查询动作。
+
+对于Parallel GC算法有两种方式：
+- 使用```-XX:+UseParallelGC```参数即可对年轻代使用并行垃圾回收算法，而对老年代则依然是单线程的垃圾回收算法进行垃圾回收且老年代的内存压缩操作也是单线程的。示例：```java -Xmx12m -Xms3m -Xmn1m -XX:PermSize=20M -XX:MaxPermSize=20M -XX:+UseParallelGC -jar /path/to/demo.jar```
+- 使用```-XX:UseParallelOldGC```参数启动JVM则是设置了年轻代以及老年代均使用并行的垃圾回收算法。同时老年代的内存压缩操作也是并行的。因为年轻代的操作是复制操作，所以不需要内存压缩的操作。在回收了无引用的对象后，存活对象之间存在各种大小的内存碎片，压缩内存的操作就是讲存活的对象移动到一起，减少内存碎片的存在，提高内存的利用效率。并行回收与并行压缩回收的区别就是后者会在回收对象之后对内存进行压缩操作。使用ParallelOldGC示例：```java -Xmx12m -Xms3m -Xmn1m -XX:PermSize=20M -XX:MaxPermSize=20M -XX:+UseParallelOldGC -jar /path/to/demo.jar```
+
+3. CMS GC(并发标记扫描)
+
+CMS(Concurrent Mark Sweep)回收算法，也称为并发低暂停回收算法，主要收集tenured generation。它通过与应用线程一起运行来减少GC时的暂停时间，通常情况下，CMS GC不会对内存进行压缩操作，即不会移动存活对象，当内存碎片过多时，就会申请一个更大的heap空间。
+> CMS GC在年轻代中使用的算法和Parallel GC使用的算法是一样的。
+CMS适用于对GC时暂停时间比较敏感且能和回收算法共享资源的应用，如用于回应事件的桌面UI应用，用于回应客户端请求的web服务器等。
+CMS垃圾回收器的相关命令行参数为：
+- ```-XX:+UseConcMarkSweepGC``` 使用CMS GC
+- ```-XX:ParallelCMSThreads=<n>``` 设置并发的线程数为n
+完整示例：
+``` shell
+java -Xmx12m -Xms3m -Xmn1m -XX:PermSize=20m -XX:MaxPermSize=20m -XX:+UseConcMarkSweepGC -XX:ParallelCMSThreads=2 -jar /path/to/demo.jar
+```
+
+4. G1 GC（Garbage First）
+G1算法是为了取代CMS算法而推出的垃圾回收算法，在Java7中就可以使用了。G1算法也是并行并发且渐进压缩的低暂停时间的垃圾回收算法，相比CMS而言G1会进行内存压缩操作。而且G1算法使用的内存布局与上面的所有垃圾回收算法均不同。
+使用```+XX:UseG1GC```启用G1垃圾回收算法。完整示例：
+``` shell
+java -Xmx12m -Xms3m -XX:+UseG1GC -jar /path/to/demo.jar
+```
+
+
 参考链接：
 1. [JVM总览](https://docs.oracle.com/javase/specs/jvms/se13/html/jvms-2.html)
 2. [Java Garbage Collection Basics](https://www.oracle.com/webfolder/technetwork/tutorials/obe/java/gc01/index.html)
