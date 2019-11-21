@@ -26,6 +26,62 @@ G1将堆划分成了一块一块的更小的空间，如图1所示所示。每�
 
 G1 gc暂停时可以回收整个年轻代空间，而且能在任意一个暂停时刻回收其他老年代空间。在暂停期间，G1会将选定的对象复制堆中的其他内存块中，至于复制到哪些块中，则是根据当前被复制的对象来决定：年轻代中的对象要么被复制到survivor空间中要么被复制到老年代空间中，而老年代中的对象则是到老年代中的其他不同区域（压缩操作）。
 
+## G1 gc循环
+
+从高层次来看，G1 gc是在两个阶段之间不停的循环：Young-only阶段，Space Reclamation(空间回收)阶段。Young-only阶段包含了用老年代中的对象填充当前可用内存的垃圾回收。Space Reclamation阶段是G1逐步回收老年代空间同时处理年轻代空间的阶段。这个循环是以Young-only阶段为重新开始的。下图表示了G1 gc循环：
+![](./img/g1gccircle.png)
+1. Young-only阶段：这个阶段是以回收年轻代中对象提升到老年代的对象开始的。这个位于Young-only和Space Reclamation阶段之间的过程是当**老年代的占有率达到了启动堆占用阈值(IHOP)**时开始的。此时，G1会安排年轻代的初始标记(initial mark)，而不是年轻代的回收。
+- initial mark（初始标记）：这种类型的收集在启动标记处理的同时还会执行常规的young-only回收。并发的标记决定了目前老年代中所有可达的（实时）对象都会别保留到接下来的space reclamation阶段。当标记完成时，常规的年轻代垃圾回收操作就开始了。这次标记结束时会有两个特殊的stop-the-world：Remark以及Cleanup。
+- Remark：此次暂停最终会完成标记，并执行全局应用处理以及类卸载。在Remark和Cleanup之间，G1会并发的计算活动信息的摘要，并将最终确定并被在Cleanup暂停是用于更新内部数据。
+- Cleanup：此次暂停会回收完全空的区域并且决定space-reclamation阶段是否实际执行。如果需要执行space-reclamation阶段，则young-only阶段则是以只执行年轻代的垃圾回收而结束。
+
+2. space-reclamation阶段：这个阶段包含了多种混合操作，除了年轻代之外还会移动老年代区域中的活跃对象。当G1算法发现即使移动更多的老年代区域也不够提供更多可用空间时，space-reclamation就会结束。
+
+在space-reclamation之后，gc循环又会以一个新的young-only阶段重新开始。作为备份，如果应用在G1收集信息的时候用完了内存，G1则会像其他垃圾回收算法一样进行一次针对整个堆空间的一次压缩操作（full gc）。
+
+## G1内部构造
+
+#### 初始堆占用率
+Initiating Heap Occupancy Percent(IHOP)是触发initial mark设置的阈值，该阈值定义为老年代内存空间的百分比。
+
+默认情况下，G1是会自动决定一个最佳的IHOP，通过观察标记对象所需时间以及在标记周期内老年代中通常分配多少内存。这种特性被称作：**Adaptive IHOP（可调节IHOP）**。当这个特性被激活时，```-XX:InitiatingHeapOccupancyPercent ```参数用于设置当没有足够的观察数据来预测一个较好的**初始堆占用阈值**时的老年代的内存占比。如果需要关闭G1这种预测操作，则使用```-XX:-G1UseAdaptiveIHOP```，这种情况下初始堆占用阈值始终为```-XX:InitiatingHeapOccupancyPercent```参数的值。
+
+
+Adaptive IHOP尽量设置初始堆占用率(Initiating Heap Occupancy)，以便于第一次space-reclamation阶段的混合垃圾回收在老年代占用率是目前老年代的最大值减去```-XX:G1HeapReservePercent```参数的值的时候开始：作为额外的缓冲器。
+
+#### 标记(Marking)
+G1标记使用的是一种叫做**Snapshot-At-The-Beginning(SATB)**的算法。它会在initial mark暂停的时候对堆空间进行一次快照，在开始标记的时候所有活跃的对象都被会被保留下来。这意味着在标记期间死掉(不可达)的对象也会被保留到sapce-reclamation阶段。和其他回收算法相比这可能会导致一部分错误的对象被保留。然而，SATB在Remark暂停阶段提供了更好的延迟。没被回收的死亡对象会在下次标记期间被回收。
+
+#### 堆空间紧张时G1的操作
+
+如果应用占用的内存过多会导致G1 gc时“撤退”对象失败：
+
+#### 大对象
+大对象的定义是：大小大于或等于一个半最小内存块的对象。最小内存块的大小与默认值或者```-XX:G1HeapRegionSize```选项值有关，对于默认值，最小内存块大小基于堆的初始值以及最大值，堆中包含有2048个最小内存块，所以每个内存块的大小在1-32MB之间，且他们的大小必须是2的倍数。
+对于大对象有以下几种特殊的处理方法：
+- 每个大对象都会被分配到老年代中连续的内存空间中。对象的其实部位会被分配到第一个内存块中，其余部分则是在第一块空间后面的连续空间中，对于最后一个内存块未分配完的空间将会直接被丢弃以进行分配直到整个对象都被回收。
+- 通常来说，大对象只能在mark(标记)结束到Cleanup暂停阶段以及进行Full GC时被回收(不能到达的前提)。但是，对于原生数据数组对象如：bool，所有的整数以及浮点数有特殊的规定。G1默认情况下会尝试在任意一种gc暂停时回收死掉的大对象，可通过```-XX:G1EagerReclaimHumongousObjects```参数关闭该功能。
+- 对大对象进行分配会导致gc暂停提前。每次给大对象分配空间时g1算法都会检查堆空间的占用率是否已达到设定的阈值，如果已达到阈值就会强制立即开始initial mark。
+- 大对象不会被移动，即使是在Full GC期间。这可能会减慢Full GC以及可能会因为大对象而造成的空间碎片导致的内存不足错误。
+
+#### Young-only阶段世代大小调整
+
+在Young-only阶段，只会对年轻代的内存空间进行回收。G1通常会在Young-only回收阶段的结尾调整年轻代的大小。这样G1可以满足在```-XX:MaxGCPauseTimeMillis以及-XX:PauseTimeIntervalMillis```期间的暂停时间(依据于长期观察实际的暂停时间)。这个考虑了相似规模的年轻代"撤离"所需要的时间，包括gc期间多少对象需要被复制以及他们之间的联系。
+如果没有其他限制，G1会动态的调整年轻代的大小在```-XX:G1NewSizePercent 至 -XX:G1MaxNewSizePercent```期间来蛮子暂停时间目标。
+
+#### Space-Reclamation阶段的世代大小调整
+
+在Space-Reclamation阶段中，G1会尝试在单次gc(垃圾回收)暂停时最大化老年代的空间。年轻大的大小则会被设置为允许的最小值（根据```-XX:G1NewSizePercent```参数值计算），回收的老年代空间都会被添加到年轻代空间中直到超过暂停时间目标为止。
+
+#### 与其他垃圾回收算法的比较
+
+- Parallel GC算法只能从整体上压缩并回收老年代中的空间，G1则是在多个更短的集合中增量的分配这项工作。这大大的缩短了暂停时间，但可能会降低吞吐量。
+- 与CMS类似，G1并发的执行老年代的空间回收操作。但CMS不能处理老年代中的内存碎片，即使是在Full GC中。
+- G1可能会比其他回收算法开销更大，由于它的并发性，影响吞吐量。
+
+
+
 
 参考链接：
-[G1 basic](https://docs.oracle.com/javase/10/gctuning/garbage-first-garbage-collector.htm#JSGCT-GUID-F1BE86FA-3EDC-4D4F-BDB4-4B044AD83180)
+[https://docs.oracle.com/javase/10/gctuning/garbage-first-garbage-collector.html](https://docs.oracle.com/javase/10/gctuning/garbage-first-garbage-collector.htm#JSGCT-GUID-F1BE86FA-3EDC-4D4F-BDB4-4B044AD83180)
+[https://docs.oracle.com/javase/10/gctuning/garbage-first-garbage-collector-tuning.htm](https://docs.oracle.com/javase/10/gctuning/garbage-first-garbage-collector-tuning.htm#JSGCT-GUID-0770AB01-E334-4E23-B307-FD2114B16E0E)
