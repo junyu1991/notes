@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+ <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<head>
+<style>
+
+html {
+  height: 100%; //想要body中的flex垂直居中生效必须指明height，即：父级容器拥有确定高度才能使用垂直居中
+}
+.body {
+  height: 100%;//想要下面的元素的flex垂直居中生效必须指明height，即：父级容器拥有确定高度才能使用垂直居中
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+/*.flex-container > div {
+  text-align: center;
+  line-height: 35px;
+  font-size: 15px;
+}*/
+.div_titile {
+	font-size: 22px;
+  font-weight: 400;
+}
+.div_author {
+	font-size: 14px;
+	font-style: italic;
+	color: gray;
+	margin-left: 40px;
+}
+
+</style>
+</head>
+<body class="body">
+<div class="flex-container">
+  <div class="div_titile">登鹳雀楼</div>
+  <div class="div_author">李白</div>
+  <div>白日依山尽，黄河入海流</div>  
+  <div>欲穷千里目，更上一层楼</div>  
+</div>
+</body>
+</html>
